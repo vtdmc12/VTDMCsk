@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/vtdmc12/VTDMCsk/refs/heads/main/Keyscript"))()
