@@ -5,7 +5,7 @@ local ValidKeys = {
 
 local KeyFileName = "Tay_hub_key.txt"
 local GetKeyURL = "https://link4sub.com/9Oxy6iwxBJ"
-local MainScriptURL = "https://raw.githubusercontent.com/vtdmc12/VTDMCsk/refs/heads/main/lon.lua.txt"
+local MainScriptURL = "https://raw.githubusercontent.com/vtdmc12/VTDMCsk/refs/heads/main/lo.lua.txt"
 
 -- Hàm kiểm tra xem danh sách khóa có thực sự trống (Miễn phí) hay không
 hàm cục bộ IsScriptFree()
