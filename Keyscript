@@ -1,0 +1,302 @@
+-- ========== NHẬN KHÓA - TỰ ĐỘNG PHÁT HIỆN/HỆ THỐNG KHÓA MIỄN PHÍ ==========
+local ValidKeys = {
+    "" -- Nếu muốn chọn MIỄN PHÍ, vui lòng xóa hết chữ trong này đi để trống thành công "" hoặc xóa dòng này.
+}
+
+local KeyFileName = "Tay_hub_key.txt"
+local GetKeyURL = "https://link4sub.com/9Oxy6iwxBJ"
+local MainScriptURL = "https://raw.githubusercontent.com/vtdmc12/VTDMCsk/refs/heads/main/lon.lua.txt"
+
+-- Hàm kiểm tra xem danh sách khóa có thực sự trống (Miễn phí) hay không
+hàm cục bộ IsScriptFree()
+    local hasKey = false
+    for _, v in pairs(ValidKeys) do
+        nếu v ~= "" và v ~= nil thì
+            hasKey = true
+            phá vỡ
+        kết thúc
+    kết thúc
+    return not hasKey -- Trả về true nếu không có khóa nào hợp lệ (Chế độ MIỄN PHÍ)
+kết thúc
+
+-- HÀM CHẠY SCRIPT CHÍNH
+hàm cục bộ RunMainScript()
+    loadstring(game:HttpGet(MainScriptURL))()
+kết thúc
+
+-- KIỂM TRA TỰ ĐỘNG CHUYỂN CHẾ ĐỘ
+nếu IsScriptFree() thì
+    print("🆓 Không tìm thấy key nào trong danh sách. Kích hoạt chế độ FREE!")
+    Chạy tập lệnh chính()
+    return -- Dừng toàn bộ code phía dưới, không hiển thị UI nữa
+kết thúc
+
+hàm cục bộ IsKeyValid(k)
+    for _, v in pairs(ValidKeys) do if k == v and v ~= "" then return true end end
+    trả về false
+kết thúc
+
+hàm cục bộ LoadSaved()
+    nếu writefile và isfile và isfile(KeyFileName) thì
+        local saved = readfile(KeyFileName)
+        nếu đã lưu và IsKeyValid(saved) thì trả về true.
+    kết thúc
+    trả về false
+kết thúc
+
+-- If đã lưu hợp lệ khóa từ trước, tự động chạy luôn tập lệnh chính
+nếu LoadSaved() thì
+    print(" ✅ Khóa đã được xác minh từ tệp lưu!")
+    Chạy tập lệnh chính()
+    trở lại
+kết thúc
+
+local plr = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Name = "KeyUI"
+gui.Parent = plr:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+
+-- Lớp nền mờ sau hoàn toàn trong suốt
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+bg.BackgroundTransparency = 1
+bg.Parent = gui
+
+-- Main container (Khung Kính Trắng Sạch Sẽ)
+thẻ cục bộ = Instance.new("Frame")
+card.Size = UDim2.new(0, 380, 0, 340)
+card.Position = UDim2.new(0.5, -190, 0.5, -170)
+card.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+card.BackgroundTransparency = 0.15
+card.BorderSizePixel = 0
+card.Parent = gui
+
+-- Bo góc cho Card
+góc cục bộ = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 24)
+góc.Cha = thẻ
+
+-- Header màu xanh lam nguyên bản
+tiêu đề cục bộ = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 80)
+header.BackgroundColor3 = Color3.fromRGB(114, 137, 218)
+header.BorderSizePixel = 0
+header.ZIndex = 2
+tiêu đề.Cha = thẻ
+
+local hc = Instance.new("UICorner")
+hc.CornerRadius = UDim.new(0, 24)
+hc.Parent = tiêu đề
+
+-- Lỗi nhanh chóng ở góc bên dưới của thanh tiêu đề màu xanh
+local headerChe = Instance.new("Frame")
+headerChe.Size = UDim2.new(1, 0, 0, 24)
+headerChe.Position = UDim2.new(0, 0, 1, -24)
+headerChe.BackgroundColor3 = header.BackgroundColor3
+headerChe.BorderSizePixel = 0
+headerChe.ZIndex = 2
+headerChe.Parent = header
+
+-- Biểu tượng hoặc tiêu đề trên Header
+logo cục bộ = Instance.new("TextLabel")
+logo.Size = UDim2.new(0, 120, 0, 60)
+logo.Position = UDim2.new(0.5, -60, 0, 10)
+logo.BackgroundTransparency = 1
+logo.Text = "Tay hub"
+logo.TextColor3 = Color3.fromRGB(255, 200, 50)
+logo.Font = Enum.Font.GothamBold
+logo.TextSize = 32
+logo.ZIndex = 3
+logo.Parent = header
+
+-- Nút X đóng menu dạng biểu tượng cảm xúc chống lỗi ô vuông
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -38, 0, 12)
+close.BackgroundTransparency = 1
+close.Text = "❌"
+close.Font = Enum.Font.GothamBold
+close.TextSize = 16
+close.ZIndex = 4
+đóng.Cha mẹ = thẻ
+
+close.MouseEnter:Connect(function() close.TextTransparency = 0.4 end)
+close.MouseLeave:Connect(function() close.TextTransparency = 0 end)
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
+
+-- Tiêu đề chính
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.Position = UDim2.new(0, 0, 0, 100)
+title.BackgroundTransparency = 1
+title.Text = "Nhận khóa một lần, có hiệu lực vĩnh viễn."
+title.TextColor3 = Color3.fromRGB(45, 55, 72)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 18
+tiêu đề.Cha = thẻ
+
+-- Văn bản phụ hướng dẫn
+local sub = Instance.new("TextLabel")
+sub.Size = UDim2.new(1, 0, 0, 25)
+sub.Position = UDim2.new(0, 0, 0, 135)
+sub.BackgroundTransparency = 1
+sub.Text = "Lấy key 1 lần = viễn viễn nhé"
+sub.TextColor3 = Color3.fromRGB(120, 130, 150)
+sub.Font = Enum.Font.Gotham
+sub.TextSize = 14
+cha con = thẻ
+
+-- Ô nhập key sẽ sạch sẽ
+đầu vào cục bộ = Instance.new("TextBox")
+input.Size = UDim2.new(0.8, 0, 0, 48)
+input.Position = UDim2.new(0.1, 0, 0, 175)
+input.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+input.TextColor3 = Color3.fromRGB(40, 40, 40)
+input.PlaceholderText = "Nhập key tại đây..."
+input.PlaceholderColor3 = Color3.fromRGB(160, 165, 180)
+input.Font = Enum.Font.Gotham
+input.TextSize = 15
+input.Text = ""
+input.ClearTextOnFocus = false
+input.Parent = card
+
+local ic = Instance.new("UICorner")
+ic.CornerRadius = UDim.new(0, 12)
+ic.Parent = input
+
+local inputStroke = Instance.new("UIStroke")
+inputStroke.Color = Color3.fromRGB(114, 137, 218)
+inputStroke.Thickness = 1.5
+inputStroke.Parent = input
+
+-- Khung chứa nút
+local btnContainer = Instance.new("Frame")
+btnContainer.Size = UDim2.new(0.8, 0, 0, 48)
+btnContainer.Position = UDim2.new(0.1, 0, 0, 240)
+btnContainer.BackgroundTransparency = 1
+btnContainer.Parent = card
+
+-- KÍCH HOẠT
+local confirm = Instance.new("TextButton")
+confirm.Size = UDim2.new(0.48, -5, 1, 0)
+confirm.Position = UDim2.new(0, 0, 0, 0)
+confirm.BackgroundColor3 = Color3.fromRGB(66, 133, 244)
+confirm.Text = "RUN KEY"
+xác nhận.TextColor3 = Color3.fromRGB(255, 255, 255)
+confirm.Font = Enum.Font.GothamBold
+confirm.TextSize = 15
+xác nhận.Cha = btnContainer
+
+local cc = Instance.new("UICorner")
+cc.CornerRadius = UDim.new(0, 24)
+cc.Parent = xác nhận
+
+-- LẤY KEY
+local getkey = Instance.new("TextButton")
+getkey.Size = UDim2.new(0.48, -5, 1, 0)
+getkey.Position = UDim2.new(0.52, 0, 0, 0)
+getkey.BackgroundColor3 = Color3.fromRGB(235, 240, 252)
+getkey.Text = "LẤY KHÓA"
+getkey.TextColor3 = Color3.fromRGB(70, 85, 110)
+getkey.Font = Enum.Font.GothamBold
+getkey.TextSize = 15
+getkey.Parent = btnContainer
+
+local gc = Instance.new("UICorner")
+gc.CornerRadius = UDim.new(0, 24)
+gc.Parent = getkey
+
+confirm.MouseEnter:Connect(function() confirm.BackgroundColor3 = Color3.fromRGB(50, 115, 220) end)
+confirm.MouseLeave:Connect(function() confirm.BackgroundColor3 = Color3.fromRGB(66, 133, 244) end)
+getkey.MouseEnter:Connect(function() getkey.BackgroundColor3 = Color3.fromRGB(215, 225, 245) end)
+getkey.MouseLeave:Connect(function() getkey.BackgroundColor3 = Color3.fromRGB(235, 240, 252) end)
+
+-- Thông báo kết quả
+local msg = Instance.new("TextLabel")
+msg.Size = UDim2.new(1, 0, 0, 25)
+msg.Position = UDim2.new(0, 0, 0, 300)
+msg.BackgroundTransparency = 1
+msg.Text = ""
+msg.TextColor3 = Color3.fromRGB(239, 68, 68)
+msg.Font = Enum.Font.GothamSemibold
+msg.TextSize = 13
+msg.Parent = card
+
+hàm cục bộ Shake(obj)
+    cục bộ o = obj.Vị trí
+    for i = 1, 4 do
+        obj.Position = UDim2.new(0.1, (i%2==0 and -6 or 6), 0, 175)
+        task.wait(0.02)
+    kết thúc
+    Vị trí của đối tượng = o
+kết thúc
+
+-- XỬ LÝ KHI BẤM NÚT RUN KEY
+xác nhận.MouseButton1Click:Connect(function()
+    local k = input.Text
+    nếu k == "" thì
+        msg.Text = "❌ Vui lòng nhập khóa"
+        trở lại
+    kết thúc
+    nếu IsKeyValid(k) thì
+        msg.Text = "✅ Khóa hợp lệ! Đang tải..."
+        msg.TextColor3 = Color3.fromRGB(34, 197, 94)
+        if writefile then writefile(KeyFileName, input.Text) end
+        task.wait(1)
+        gui:Destroy()
+        
+        RunMainScript() -- Chạy script chính
+    khác
+        msg.Text = "❌ Nhập sai phím, vui lòng thử lại.."
+        msg.TextColor3 = Color3.fromRGB(239, 68, 68)
+        Lắc (đầu vào)
+        input.Text = ""
+    kết thúc
+kết thúc)
+
+getkey.MouseButton1Click:Connect(function()
+    setclipboard(GetKeyURL)
+    msg.Text = "📋 Sao chép lấy key thành công!"
+    msg.TextColor3 = Color3.fromRGB(202, 138, 4)
+    nhiệm vụ.chờ(2)
+    msg.Text = ""
+kết thúc)
+
+-- SCRIPT KÉO THẢ DI CHUYỂN MENU (DRAG SYSTEM)
+local UserInputService = game:GetService("UserInputService")
+kéo cục bộ, đầu vào kéo, điểm bắt đầu kéo, vị trí bắt đầu
+
+cập nhật hàm cục bộ (đầu vào)
+    delta cục bộ = vị trí đầu vào - điểm bắt đầu kéo
+    card.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+kết thúc
+
+header.InputBegan:Connect(function(input)
+    nếu input.UserInputType == Enum.UserInputType.MouseButton1 hoặc input.UserInputType == Enum.UserInputType.Touch thì
+        kéo = đúng
+        dragStart = input.Position
+        startPos = card.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                kéo lê = sai
+            kết thúc
+        kết thúc)
+    kết thúc
+kết thúc)
+
+header.InputChanged:Connect(function(input)
+    nếu input.UserInputType == Enum.UserInputType.MouseMovement hoặc input.UserInputType == Enum.UserInputType.Touch thì
+        dragInput = input
+    kết thúc
+kết thúc)
+
+UserInputService.InputChanged:Connect(function(input)
+    nếu input == dragInput và đang kéo thì
+        cập nhật(đầu vào)
+    kết thúc
+kết thúc)
+
+print("✨ Giao diện người dùng được tích hợp hệ thống Tự động giải phóng thông minh!")
