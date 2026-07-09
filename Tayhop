@@ -1,0 +1,305 @@
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
+local Window = redzlib:MakeWindow({
+    Title = "Tay Hub ",
+    SubTitle = "by @tungdepzai",
+    SaveFolder = "taynaiget.json"
+})
+
+local Minimizer = Window:NewMinimizer({
+  KeyCode = Enum.KeyCode.LeftControl
+})
+
+local MobileButton = Minimizer:CreateMobileMinimizer({
+  Image = "rbxassetid://96454140798208",
+  BackgroundColor3 = Color3.fromRGB(0, 255, 254)
+})
+
+local Tabs = {
+    Info = Window:MakeTab({ Title = "Tab Info And Status", Icon = "Info" }),
+    Main = Window:MakeTab({ Title = "Tab Farming", Icon = "rbxassetid://7733960981" }),
+    Hop = Window:MakeTab({ Title = "Tab Hop", Icon = "locate" }),
+    Settings = Window:MakeTab({ Title = "Tab Setting", Icon = "rbxassetid://7734053495" }),
+    Fish = Window:MakeTab({ Title = "Tab Fishing", Icon = "rbxassetid://127664059821666" }),
+    Quests = Window:MakeTab({ Title = "Tab Quest And Item", Icon = "rbxassetid://13075622619" }),
+    SeaEvent = Window:MakeTab({ Title = "Tab Sea Event", Icon = "waves" }),
+    Race = Window:MakeTab({ Title = "Tab Mirage And Race", Icon = "rbxassetid://11162889532" }),
+    Prehistoric = Window:MakeTab({ Title = "Tab Volcano Event", Icon = "tent" }),
+    Esp = Window:MakeTab({ Title = "Tab Stats And Esp", Icon = "rbxassetid://7040410130" }),
+    Raids = Window:MakeTab({ Title = "Tab Fruit And Raid", Icon = "rbxassetid://11155986081" }),
+    Combat = Window:MakeTab({ Title = "Tab Local Player", Icon = "rbxassetid://13075651575" }),
+    Travel = Window:MakeTab({ Title = "Tab Teleport", Icon = "locate" }),
+    Shop = Window:MakeTab({ Title = "Tab Shopping", Icon = "rbxassetid://6031265976" }),
+    Misc = Window:MakeTab({ Title = "Tab Miscellaneous", Icon = "rbxassetid://10709783577" })
+}
+
+Tabs.Info:AddSection("Information")
+Tabs.Info:AddDiscordInvite({
+    Title = "Tay hub | Community",
+    Description = "A community for Tay hub Users - official scripts, updates, and suport in one place.",
+    Banner = "rbxassetid://96454140798208", 
+    Logo = "rbxassetid://96454140798208",
+    Invite = "https://discord.gg/75HaB35ymY",
+    Members = 36, 
+    Online = 67, 
+})
+Tabs.Info:AddSection("Status Server")
+Tabs.Hop:AddSection("Server Browser")
+
+-- ============================================================
+--  API MỚI (CHỈ 1 URL DUY NHẤT)
+-- ============================================================
+local API_URL = "https://api-tayhub.vercel.app"
+
+local fruitServerList = {}
+local serverButtons = {}
+local fruitLabel = nil
+local isRefreshing = false
+
+-- ============================================================
+--  HÀM LẤY DỮ LIỆU
+-- ============================================================
+local function fetchJobs()
+    local HttpService = game:GetService("HttpService")
+    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
+    if not request then
+        warn("Executor doesn't support request")
+        return nil
+    end
+
+    local ok, res = pcall(function()
+        return request({
+            Url = API_URL,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox",
+                ["Referer"] = "https://api-tayhub.vercel.app/"
+            }
+        })
+    end)
+
+    if ok and res then
+        local success, body = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        if success and body and body.all_servers then
+            local allJobs = {}
+            for _, v in ipairs(body.all_servers) do
+                local j = tostring(v.jobid or "")
+                local b = tostring(v.type or "")
+                local s = tonumber(v.placeId and (v.placeId == 2753915549 and 1 or v.placeId == 4442272183 and 2 or v.placeId == 79091703265657 and 2 or v.placeId == 7449423635 and 3 or v.placeId == 100117331123089 and 3 or 0)) or 0
+                local p = tonumber(v.Players) or 0
+                if #j > 10 then
+                    table.insert(allJobs, {job = j, boss = b, sea = s, players = p})
+                end
+            end
+            return allJobs
+        end
+    end
+    return nil
+end
+
+-- ============================================================
+--  HÀM TELEPORT
+-- ============================================================
+local function Teleport(job)
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    local Remote = ReplicatedStorage:FindFirstChild("__ServerBrowser")
+    
+    pcall(function()
+        Window:Notify({
+            Title = "Tay hub",
+            Content = "Job: " .. job,
+            Image = "rbxassetid://96454140798208",
+            Duration = 5
+        })
+    end)
+
+    if Remote then
+        local ok = pcall(function()
+            Remote:InvokeServer("teleport", job)
+        end)
+        if ok then return end
+    end
+    pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, job, Players.LocalPlayer)
+    end)
+end
+
+-- ============================================================
+--  HÀM HOP
+-- ============================================================
+local function hopByKeyword(keyword, visitedKey, isFruit)
+    local jobs = fetchJobs()
+    if jobs and #jobs > 0 then
+        local visited = _G[visitedKey] or {}
+        _G[visitedKey] = visited
+        for _, v in ipairs(jobs) do
+            local boss = tostring(v.boss or ""):lower()
+            local job = tostring(v.job or "")
+            local isMatch = false
+            
+            if isFruit then
+                isMatch = boss:find("fruit") 
+            else
+                isMatch = boss:find(keyword:lower())
+            end
+            
+            if isMatch and #job > 10 and job ~= game.JobId and not visited[job] then
+                visited[job] = true
+                Teleport(job)
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- ============================================================
+--  TẠO TOGGLE (CÓ PCALL)
+-- ============================================================
+local function createToggle(name, keyword, visitedKey, isFruit)
+    local hopping = false
+    Tabs.Hop:AddToggle({
+        Name = "Auto Hop " .. name,
+        Default = false,
+        Callback = function(Value)
+            hopping = Value
+            if hopping then
+                print("[Hop] Bắt đầu " .. name .. "...")
+                task.spawn(function()
+                    while hopping do
+                        local hopSuccess, hopErr = pcall(function()
+                            if not hopByKeyword(keyword, visitedKey, isFruit) then
+                                _G[visitedKey] = {}
+                            end
+                        end)
+                        if not hopSuccess then
+                            print("[Hop] Lỗi trong vòng lặp:", hopErr)
+                        end
+                        task.wait(0.1)
+                    end
+                    print("[Hop] Dừng " .. name)
+                end)
+            end
+        end
+    })
+end
+
+-- ============================================================
+--  PHẦN 1: SERVER HOP
+-- ============================================================
+Tabs.Hop:AddSection("Server Hop")
+createToggle("Full Moon", "fullmoon", "VisitedFullMoonServers", false)
+createToggle("Near Moon", "nearmoon", "VisitedNearMoonServers", false)
+createToggle("Mirage Island", "mirage", "VisitedMirageServers", false)
+createToggle("Kitsune Island", "kitsune", "VisitedKitsuneServers", false)
+createToggle("Prehistoric Island", "prehistoric", "VisitedPrehistoricServers", false)
+
+-- ============================================================
+--  PHẦN 2: BOSS HOP
+-- ============================================================
+Tabs.Hop:AddSection("Boss Hop")
+local bossList = {
+    "FrozenLeviathan", "SwordShizu", "SwordOroshi", "SwordSaishi",
+    "HakiSnowWhite", "HakiPureRed", "HakiWinterSky", "Greybeard",
+    "SoulReaper", "CakeQueen", "CakePrince", "CursedCaptain",
+    "Darkbeard", "DoughKing", "RipIndra", "TyrantSkies", "Elite", "PirateRaid"
+}
+
+for _, bossName in ipairs(bossList) do
+    local visitedKey = "Visited" .. bossName
+    createToggle(bossName, bossName, visitedKey, false)
+end
+
+-- ============================================================
+--  PHẦN 3: FRUIT HOP
+-- ============================================================
+Tabs.Hop:AddSection("Fruit Hop")
+
+local function refreshFruitList()
+    if isRefreshing then return end
+    isRefreshing = true
+    
+    for _, btn in ipairs(serverButtons) do
+        pcall(function() 
+            if btn then
+                if btn.Destroy then btn:Destroy() 
+                elseif btn.Delete then btn:Delete() 
+                end
+            end
+        end)
+    end
+    serverButtons = {}
+    fruitServerList = {}
+    
+    local jobs = fetchJobs()
+    if not jobs or #jobs == 0 then
+        if fruitLabel then fruitLabel:Set("Kết quả: Không lấy được dữ liệu!") end
+        pcall(function()
+            Window:Notify({Title="Tay hub", Content="Không lấy được dữ liệu!", Image="rbxassetid://96454140798208", Duration=3})
+        end)
+        isRefreshing = false
+        return
+    end
+    
+    for _, v in ipairs(jobs) do
+        local boss = tostring(v.boss or ""):lower()
+        local job = tostring(v.job or "")
+        local isFruit = boss:find("fruit")
+            
+        if isFruit and #job > 10 and job ~= game.JobId then
+            table.insert(fruitServerList, {job=job, boss=v.boss, players=v.players, sea=v.sea})
+        end
+    end
+    
+    if #fruitServerList == 0 then
+        if fruitLabel then fruitLabel:Set("Kết quả: Không tìm thấy server Fruit!") end
+        isRefreshing = false
+        return
+    end
+    
+    if fruitLabel then fruitLabel:Set("Tìm thấy " .. #fruitServerList .. " server Fruit") end
+    
+    local maxButtons = math.min(8, #fruitServerList)
+    for i = 1, maxButtons do
+        local server = fruitServerList[i]
+        local btn = Tabs.Hop:AddButton({
+            Name = "Vào: " .. server.boss,
+            Callback = function() Teleport(server.job) end
+        })
+        table.insert(serverButtons, btn)
+    end
+    
+    pcall(function()
+        Window:Notify({Title="Tay hub", Content="Đã cập nhật: " .. #fruitServerList .. " server", Image="rbxassetid://96454140798208", Duration=2})
+    end)
+    
+    isRefreshing = false
+end
+
+Tabs.Hop:AddButton({Name = "Làm mới danh sách", Callback = refreshFruitList})
+fruitLabel = Tabs.Hop:AddLabel("Kết quả: Chưa có dữ liệu")
+
+Tabs.Hop:AddButton({
+    Name = "Reset Fruit (Xóa bộ nhớ visited)",
+    Callback = function()
+        pcall(function()
+            _G.VisitedFruitServers = {}
+            Window:Notify({Title="Tay hub", Content="Đã xóa bộ nhớ visited!", Image="rbxassetid://96454140798208", Duration=2})
+        end)
+    end
+})
+
+createToggle("Fruit", "fruit", "VisitedFruitServers", true)
+
+-- ============================================================
+--  TỰ ĐỘNG LÀM MỚI KHI MỞ MENU
+-- ============================================================
+task.spawn(function()
+    task.wait(1)
+    refreshFruitList()
+end)
+
+print("[Tay Hub] Đã tải xong! API mới: https://api-tayhub.vercel.app")
