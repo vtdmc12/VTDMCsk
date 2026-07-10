@@ -16,20 +16,7 @@ local MobileButton = Minimizer:CreateMobileMinimizer({
 
 local Tabs = {
     Info = Window:MakeTab({ Title = "Tab Info And Status", Icon = "Info" }),
-    Main = Window:MakeTab({ Title = "Tab Farming", Icon = "rbxassetid://7733960981" }),
     Hop = Window:MakeTab({ Title = "Tab Hop", Icon = "locate" }),
-    Settings = Window:MakeTab({ Title = "Tab Setting", Icon = "rbxassetid://7734053495" }),
-    Fish = Window:MakeTab({ Title = "Tab Fishing", Icon = "rbxassetid://127664059821666" }),
-    Quests = Window:MakeTab({ Title = "Tab Quest And Item", Icon = "rbxassetid://13075622619" }),
-    SeaEvent = Window:MakeTab({ Title = "Tab Sea Event", Icon = "waves" }),
-    Race = Window:MakeTab({ Title = "Tab Mirage And Race", Icon = "rbxassetid://11162889532" }),
-    Prehistoric = Window:MakeTab({ Title = "Tab Volcano Event", Icon = "tent" }),
-    Esp = Window:MakeTab({ Title = "Tab Stats And Esp", Icon = "rbxassetid://7040410130" }),
-    Raids = Window:MakeTab({ Title = "Tab Fruit And Raid", Icon = "rbxassetid://11155986081" }),
-    Combat = Window:MakeTab({ Title = "Tab Local Player", Icon = "rbxassetid://13075651575" }),
-    Travel = Window:MakeTab({ Title = "Tab Teleport", Icon = "locate" }),
-    Shop = Window:MakeTab({ Title = "Tab Shopping", Icon = "rbxassetid://6031265976" }),
-    Misc = Window:MakeTab({ Title = "Tab Miscellaneous", Icon = "rbxassetid://10709783577" })
 }
 
 Tabs.Info:AddSection("Information")
@@ -45,30 +32,67 @@ Tabs.Info:AddDiscordInvite({
 Tabs.Info:AddSection("Status Server")
 Tabs.Hop:AddSection("Server Browser")
 
--- ============================================================
---  API MỚI (CHỈ 1 URL DUY NHẤT)
--- ============================================================
-local API_URL = "https://api-tayhub.vercel.app"
+
+local API_1 = "https://dichvuvip2.onrender.com/api/c0a7998319e0/all"
+local API_2 = "https://api-tayhub.vercel.app"
 
 local fruitServerList = {}
 local serverButtons = {}
 local fruitLabel = nil
 local isRefreshing = false
+local currentAPI = 1 -- 1 = API 1, 2 = API 2
 
--- ============================================================
---  HÀM LẤY DỮ LIỆU
--- ============================================================
-local function fetchJobs()
+local function fetchAPI1()
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
     if not request then
-        warn("Executor doesn't support request")
         return nil
     end
 
     local ok, res = pcall(function()
         return request({
-            Url = API_URL,
+            Url = API_1,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox",
+                ["Referer"] = "https://dichvuvip2.onrender.com/"
+            }
+        })
+    end)
+
+    if ok and res then
+        local success, body = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        
+        if success and body and body.jobs then
+            local result = {}
+            for _, v in ipairs(body.jobs) do
+                local j = tostring(v.job or "")
+                local b = tostring(v.boss or "")
+                local s = tonumber(v.sea) or 0
+                local p = tonumber(v.players) or 0
+                if #j > 10 then
+                    table.insert(result, {job = j, boss = b, sea = s, players = p})
+                end
+            end
+            return result
+        end
+    end
+    return nil
+end
+
+
+local function fetchAPI2()
+    local HttpService = game:GetService("HttpService")
+    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
+    if not request then
+        return nil
+    end
+
+    local ok, res = pcall(function()
+        return request({
+            Url = API_2,
             Method = "GET",
             Headers = {
                 ["User-Agent"] = "Roblox",
@@ -81,26 +105,79 @@ local function fetchJobs()
         local success, body = pcall(function()
             return HttpService:JSONDecode(res.Body)
         end)
+        
         if success and body and body.all_servers then
-            local allJobs = {}
+            local result = {}
             for _, v in ipairs(body.all_servers) do
                 local j = tostring(v.jobid or "")
                 local b = tostring(v.type or "")
-                local s = tonumber(v.placeId and (v.placeId == 2753915549 and 1 or v.placeId == 4442272183 and 2 or v.placeId == 79091703265657 and 2 or v.placeId == 7449423635 and 3 or v.placeId == 100117331123089 and 3 or 0)) or 0
+                local placeId = v.placeId or 0
+                local s = 0
+                if placeId == 2753915549 or placeId == 85211729168715 then s = 1
+                elseif placeId == 4442272183 or placeId == 79091703265657 then s = 2
+                elseif placeId == 7449423635 or placeId == 100117331123089 then s = 3
+                end
                 local p = tonumber(v.Players) or 0
                 if #j > 10 then
-                    table.insert(allJobs, {job = j, boss = b, sea = s, players = p})
+                    table.insert(result, {job = j, boss = b, sea = s, players = p})
                 end
             end
-            return allJobs
+            return result
         end
     end
     return nil
 end
 
--- ============================================================
---  HÀM TELEPORT
--- ============================================================
+local function fetchJobs()
+    -- THỬ API 1 TRƯỚC
+    if currentAPI == 1 then
+        local jobs1 = fetchAPI1()
+        if jobs1 and #jobs1 > 0 then
+            print("[Hop] ", #jobs1, "server")
+            return jobs1
+        else
+            print("[ không có dữ liệu, ")
+            currentAPI = 2
+        end
+    end
+    
+    -- THỬ API 2 SAU
+    if currentAPI == 2 then
+        local jobs2 = fetchAPI2()
+        if jobs2 and #jobs2 > 0 then
+            print("[Hop] -", #jobs2, "server")
+            return jobs2
+        else
+            print("[Hop] không có dữ liệu!")
+            currentAPI = 1 -- Reset về API 1 để thử lại sau
+            return nil
+        end
+    end
+    
+    return nil
+end
+
+local function fetchAllFruit()
+    local allFruit = {}
+    local seenJobs = {}
+    
+    local jobs = fetchJobs()
+    if jobs then
+        for _, v in ipairs(jobs) do
+            local boss = tostring(v.boss or ""):lower()
+            local job = tostring(v.job or "")
+            local isFruit = boss:find("fruit") or boss:find("devil") or boss:find("dark") or boss:find("ghost") or boss:find("bomb") or boss:find("rocket") or boss:find("flame") or boss:find("ice") or boss:find("quake") or boss:find("light") or boss:find("love") or boss:find("spider") or boss:find("smoke") or boss:find("magma") or boss:find("sand") or boss:find("revive") or boss:find("diamond") or boss:find("rubber") or boss:find("barrier") or boss:find("gravity") or boss:find("shadow") or boss:find("venom") or boss:find("control")
+            
+            if isFruit and #job > 10 and job ~= game.JobId and not seenJobs[job] then
+                seenJobs[job] = true
+                table.insert(allFruit, {job=job, boss=v.boss, players=v.players, sea=v.sea})
+            end
+        end
+    end
+    
+    return allFruit
+end
+
 local function Teleport(job)
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local TeleportService = game:GetService("TeleportService")
@@ -120,45 +197,83 @@ local function Teleport(job)
         local ok = pcall(function()
             Remote:InvokeServer("teleport", job)
         end)
-        if ok then return end
+        if ok then return true end
     end
-    pcall(function()
+    
+    local ok = pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, job, Players.LocalPlayer)
     end)
+    
+    return ok
 end
 
--- ============================================================
---  HÀM HOP
--- ============================================================
 local function hopByKeyword(keyword, visitedKey, isFruit)
     local jobs = fetchJobs()
-    if jobs and #jobs > 0 then
-        local visited = _G[visitedKey] or {}
-        _G[visitedKey] = visited
-        for _, v in ipairs(jobs) do
-            local boss = tostring(v.boss or ""):lower()
-            local job = tostring(v.job or "")
-            local isMatch = false
+    
+    if not jobs or #jobs == 0 then
+        print("[Hop] ❌ Không có dữ liệu từ ")
+        return false
+    end
+    
+    local visited = _G[visitedKey] or {}
+    _G[visitedKey] = visited
+    
+    -- DUYỆT TỪNG SERVER
+    for _, v in ipairs(jobs) do
+        local boss = tostring(v.boss or ""):lower()
+        local job = tostring(v.job or "")
+        local isMatch = false
+        
+        if isFruit then
+            isMatch = boss:find("fruit") or boss:find("devil") or boss:find("dark") or boss:find("ghost") or boss:find("bomb") or boss:find("rocket") or boss:find("flame") or boss:find("ice") or boss:find("quake") or boss:find("light") or boss:find("love") or boss:find("spider") or boss:find("smoke") or boss:find("magma") or boss:find("sand") or boss:find("revive") or boss:find("diamond") or boss:find("rubber") or boss:find("barrier") or boss:find("gravity") or boss:find("shadow") or boss:find("venom") or boss:find("control")
+        else
+            isMatch = boss:find(keyword:lower())
+        end
+        
+        if isMatch and #job > 10 and job ~= game.JobId and not visited[job] then
+            visited[job] = true
             
-            if isFruit then
-                isMatch = boss:find("fruit") 
-            else
-                isMatch = boss:find(keyword:lower())
-            end
+            local displayBoss = v.boss
+            local seaText = v.sea and "Sea " .. v.sea or "Unknown"
+            local playerText = v.players and v.players .. "/12" or "?/12"
             
-            if isMatch and #job > 10 and job ~= game.JobId and not visited[job] then
-                visited[job] = true
-                Teleport(job)
+            Window:Notify({
+                Title = "Tay hub",
+                Content = string.format("%s | %s | %s\nJob: %s", 
+                    displayBoss, seaText, playerText, job),
+                Image = "rbxassetid://96454140798208",
+                Duration = 5
+            })
+            
+            print(" Tìm thấy:", displayBoss, "| Job:", job)
+            
+            -- THỬ TELEPORT
+            local success = Teleport(job)
+            if success then
                 return true
+            else
+                print(" Teleport thất bại, tìm server khác...")
             end
         end
     end
+    
+    -- NẾU KHÔNG TÌM THẤY SERVER NÀO TRONG API HIỆN TẠI
+    print("[Hop] dit mẹ mày")
+    
+    -- CHUYỂN SANG API KHÁC
+    if currentAPI == 1 then
+        currentAPI = 2
+        print("[Hop] ")
+    elseif currentAPI == 2 then
+        currentAPI = 1
+        print("[Hop] ")
+        -- RESET VISITED KHI CHUYỂN VỀ API 1
+        _G[visitedKey] = {}
+    end
+    
     return false
 end
 
--- ============================================================
---  TẠO TOGGLE (CÓ PCALL)
--- ============================================================
 local function createToggle(name, keyword, visitedKey, isFruit)
     local hopping = false
     Tabs.Hop:AddToggle({
@@ -167,29 +282,25 @@ local function createToggle(name, keyword, visitedKey, isFruit)
         Callback = function(Value)
             hopping = Value
             if hopping then
-                print("[Hop] Bắt đầu " .. name .. "...")
+                print("[Hop] ", name)
+                print("[Hop] ", currentAPI == 1 and "API 1 (dichvuvip2)" or "API 2 (TayHub)")
                 task.spawn(function()
                     while hopping do
-                        local hopSuccess, hopErr = pcall(function()
-                            if not hopByKeyword(keyword, visitedKey, isFruit) then
-                                _G[visitedKey] = {}
-                            end
-                        end)
-                        if not hopSuccess then
-                            print("[Hop] Lỗi trong vòng lặp:", hopErr)
+                        local success = hopByKeyword(keyword, visitedKey, isFruit)
+                        if not success then
+                            print("[Hop]  Reset visited, thử lại...")
                         end
                         task.wait(0.1)
                     end
-                    print("[Hop] Dừng " .. name)
+                    print("[Hop]  Dừng:", name)
                 end)
+            else
+                print("[Hop]  Tắt:", name)
             end
         end
     })
 end
 
--- ============================================================
---  PHẦN 1: SERVER HOP
--- ============================================================
 Tabs.Hop:AddSection("Server Hop")
 createToggle("Full Moon", "fullmoon", "VisitedFullMoonServers", false)
 createToggle("Near Moon", "nearmoon", "VisitedNearMoonServers", false)
@@ -197,15 +308,13 @@ createToggle("Mirage Island", "mirage", "VisitedMirageServers", false)
 createToggle("Kitsune Island", "kitsune", "VisitedKitsuneServers", false)
 createToggle("Prehistoric Island", "prehistoric", "VisitedPrehistoricServers", false)
 
--- ============================================================
---  PHẦN 2: BOSS HOP
--- ============================================================
 Tabs.Hop:AddSection("Boss Hop")
 local bossList = {
     "FrozenLeviathan", "SwordShizu", "SwordOroshi", "SwordSaishi",
     "HakiSnowWhite", "HakiPureRed", "HakiWinterSky", "Greybeard",
     "SoulReaper", "CakeQueen", "CakePrince", "CursedCaptain",
-    "Darkbeard", "DoughKing", "RipIndra", "TyrantSkies", "Elite", "PirateRaid"
+    "Darkbeard", "DoughKing", "RipIndra", "TyrantSkies", "Elite", "PirateRaid",
+    "Urban", "Diablo", "Deandre", "Mebeo"
 }
 
 for _, bossName in ipairs(bossList) do
@@ -213,9 +322,6 @@ for _, bossName in ipairs(bossList) do
     createToggle(bossName, bossName, visitedKey, false)
 end
 
--- ============================================================
---  PHẦN 3: FRUIT HOP
--- ============================================================
 Tabs.Hop:AddSection("Fruit Hop")
 
 local function refreshFruitList()
@@ -234,31 +340,18 @@ local function refreshFruitList()
     serverButtons = {}
     fruitServerList = {}
     
-    local jobs = fetchJobs()
-    if not jobs or #jobs == 0 then
-        if fruitLabel then fruitLabel:Set("Kết quả: Không lấy được dữ liệu!") end
+    local allFruit = fetchAllFruit()
+    
+    if #allFruit == 0 then
+        if fruitLabel then fruitLabel:Set("Kết quả: Không tìm thấy server Fruit!") end
         pcall(function()
-            Window:Notify({Title="Tay hub", Content="Không lấy được dữ liệu!", Image="rbxassetid://96454140798208", Duration=3})
+            Window:Notify({Title="Tay hub", Content="Không tìm thấy server Fruit!", Image="rbxassetid://96454140798208", Duration=3})
         end)
         isRefreshing = false
         return
     end
     
-    for _, v in ipairs(jobs) do
-        local boss = tostring(v.boss or ""):lower()
-        local job = tostring(v.job or "")
-        local isFruit = boss:find("fruit")
-            
-        if isFruit and #job > 10 and job ~= game.JobId then
-            table.insert(fruitServerList, {job=job, boss=v.boss, players=v.players, sea=v.sea})
-        end
-    end
-    
-    if #fruitServerList == 0 then
-        if fruitLabel then fruitLabel:Set("Kết quả: Không tìm thấy server Fruit!") end
-        isRefreshing = false
-        return
-    end
+    fruitServerList = allFruit
     
     if fruitLabel then fruitLabel:Set("Tìm thấy " .. #fruitServerList .. " server Fruit") end
     
@@ -279,8 +372,8 @@ local function refreshFruitList()
     isRefreshing = false
 end
 
-Tabs.Hop:AddButton({Name = "Làm mới danh sách", Callback = refreshFruitList})
-fruitLabel = Tabs.Hop:AddLabel("Kết quả: Chưa có dữ liệu")
+Tabs.Hop:AddButton({Name = "reset fruit", Callback = refreshFruitList})
+fruitLabel = Tabs.Hop:AddLabel("Kết quả: No data")
 
 Tabs.Hop:AddButton({
     Name = "Reset Fruit (Xóa bộ nhớ visited)",
@@ -294,12 +387,10 @@ Tabs.Hop:AddButton({
 
 createToggle("Fruit", "fruit", "VisitedFruitServers", true)
 
--- ============================================================
---  TỰ ĐỘNG LÀM MỚI KHI MỞ MENU
--- ============================================================
 task.spawn(function()
     task.wait(1)
     refreshFruitList()
 end)
 
-print("[Tay Hub] Đã tải xong! API mới: https://api-tayhub.vercel.app")
+print("[Tay Hub] ✅ Đã tải xong!")
+print("[")
