@@ -33,7 +33,7 @@ Tabs.Info:AddSection("Status Server")
 Tabs.Hop:AddSection("Server Browser")
 
 
-local API_1 = "https://dichvuvip2.onrender.com/api/c0a7998319e0/all"
+local API_1 = "https://dichvuvip3.onrender.com/api/71380e62fd0a/all"
 local API_2 = "https://api-tayhub.vercel.app"
 
 local fruitServerList = {}
@@ -55,7 +55,7 @@ local function fetchAPI1()
             Method = "GET",
             Headers = {
                 ["User-Agent"] = "Roblox",
-                ["Referer"] = "https://dichvuvip2.onrender.com/"
+                ["Referer"] = "https://dichvuvip3.onrender.com/"
             }
         })
     end)
@@ -283,7 +283,7 @@ local function createToggle(name, keyword, visitedKey, isFruit)
             hopping = Value
             if hopping then
                 print("[Hop] ", name)
-                print("[Hop] ", currentAPI == 1 and "API 1 (dichvuvip2)" or "API 2 (TayHub)")
+                print("[Hop] ", currentAPI == 1 and "API 1 (dichvuvip3)" or "API 2 (TayHub)")
                 task.spawn(function()
                     while hopping do
                         local success = hopByKeyword(keyword, visitedKey, isFruit)
