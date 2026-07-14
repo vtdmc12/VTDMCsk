@@ -333,7 +333,7 @@ local function createToggle(name, keyword, visitedKey, isFruit)
                         end
                         task.wait(0.1)
                     end
-                    print(Dừng:", name)
+                    print("Dừng:", name)
                 end)
             else
                 print(" Tắt:", name)
