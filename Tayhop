@@ -1,4 +1,4 @@
-locale redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
+local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
 local Window = redzlib:MakeWindow({
     Title = "Tay Hub ",
     SubTitle = "by @tungdepzai",
@@ -32,15 +32,21 @@ Tabs.Info:AddDiscordInvite({
 Tabs.Info:AddSection("Status Server")
 Tabs.Hop:AddSection("Server Browser")
 
+-- ============================================================
+--  3 API (PREMIUM + TAYHUB + DICHVUVIP3 MỚI)
+-- ============================================================
 local API_BASE = "http://160.187.246.8:9999/output/noencode/premium"
 local API_TAYHUB = "https://api-tayhub.vercel.app"
-local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  
+local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  -- ĐÃ ĐỔI API MỚI
 
 local fruitServerList = {}
 local serverButtons = {}
 local fruitLabel = nil
 local isRefreshing = false
 
+-- ============================================================
+--  HÀM LẤY JOB TỪ PREMIUM API
+-- ============================================================
 local function fetchPremiumJobs(keyword)
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
@@ -49,7 +55,7 @@ local function fetchPremiumJobs(keyword)
     end
 
     local url = API_BASE .. "/" .. keyword
-    print("Đang lấy dữ liệu...")
+    print(" Đang lấy dữ liệu...")
     
     local ok, res = pcall(function()
         return request({
@@ -100,17 +106,20 @@ local function fetchPremiumJobs(keyword)
                     end
                 end
             end
-            print("[Premium] Tìm thấy", #jobs, "job ID")
+            print(" Tìm thấy", #jobs, "job ID")
             return jobs
         else
-            print("[Premium] ❌ Parse JSON thất bại!")
+            print(" Parse JSON thất bại!")
         end
     else
-        print("[Premium] ❌ Lỗi kết nối !")
+        print("!")
     end
     return nil
 end
 
+-- ============================================================
+--  HÀM LẤY JOB TỪ TAYHUB API
+-- ============================================================
 local function fetchTayHubJobs(keyword)
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
@@ -118,7 +127,7 @@ local function fetchTayHubJobs(keyword)
         return nil
     end
 
-    print("[TayHub]  Đang lấy dữ liệu...")
+    print("Đang lấy dữ liệu...")
     
     local ok, res = pcall(function()
         return request({
@@ -148,14 +157,17 @@ local function fetchTayHubJobs(keyword)
                     end
                 end
             end
-            print("[TayHub]  Tìm thấy", #jobs, "job ID")
+            print(" Tìm thấy", #jobs, "job ID")
             return jobs
         end
     end
-    print("Lỗi kết nối API!")
+    print("!")
     return nil
 end
 
+-- ============================================================
+--  HÀM LẤY JOB TỪ DICHVUVIP3 MỚI
+-- ============================================================
 local function fetchDichVuJobs(keyword)
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
@@ -163,7 +175,7 @@ local function fetchDichVuJobs(keyword)
         return nil
     end
 
-    print(" lấy dữ liệu từ  mới...")
+    print("mới...")
     
     local ok, res = pcall(function()
         return request({
@@ -193,34 +205,43 @@ local function fetchDichVuJobs(keyword)
                     end
                 end
             end
-            print("]  thấy", #jobs, "job ID từ  mới")
+            print(" Tìm thấy", #jobs, "job ID từ API mới")
             return jobs
         end
     end
-    print("[DichVu] ❌ Lỗi kết nối  mới!")
+    print("mới!")
     return nil
 end
 
+-- ============================================================
+--  HÀM LẤY JOB TỪ TẤT CẢ API (FALLBACK)
+-- ============================================================
 local function fetchAllJobs(keyword)
+    -- THỬ PREMIUM TRƯỚC
     local jobs = fetchPremiumJobs(keyword)
     if jobs and #jobs > 0 then
         return jobs
     end
     
+    -- NẾU PREMIUM LỖI, THỬ TAYHUB
     jobs = fetchTayHubJobs(keyword)
     if jobs and #jobs > 0 then
         return jobs
     end
     
+    -- NẾU TAYHUB LỖI, THỬ DICHVU MỚI
     jobs = fetchDichVuJobs(keyword)
     if jobs and #jobs > 0 then
         return jobs
     end
     
-    print(" không có dữ liệu!")
+    print(" đều không có dữ liệu!")
     return nil
 end
 
+-- ============================================================
+--  HÀM TELEPORT
+-- ============================================================
 local function Teleport(job)
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local TeleportService = game:GetService("TeleportService")
@@ -250,6 +271,9 @@ local function Teleport(job)
     return ok
 end
 
+-- ============================================================
+--  HÀM HOP
+-- ============================================================
 local function hopByKeyword(keyword, visitedKey, isFruit)
     local jobs = fetchAllJobs(keyword)
     
@@ -276,7 +300,7 @@ local function hopByKeyword(keyword, visitedKey, isFruit)
             
             local success = Teleport(job)
             if success then
-                print("Teleport thành công!")
+                print("[✅] Teleport thành công!")
                 return true
             else
                 print("[⚠️] Teleport thất bại, thử job khác...")
@@ -285,10 +309,13 @@ local function hopByKeyword(keyword, visitedKey, isFruit)
     end
     
     _G[visitedKey] = {}
-    print("sited")
+    print(" Reset visited")
     return false
 end
 
+-- ============================================================
+--  TẠO TOGGLE
+-- ============================================================
 local function createToggle(name, keyword, visitedKey, isFruit)
     local hopping = false
     Tabs.Hop:AddToggle({
@@ -297,24 +324,27 @@ local function createToggle(name, keyword, visitedKey, isFruit)
         Callback = function(Value)
             hopping = Value
             if hopping then
-                print("ìm:", name)
+                print("Bắt đầu tìm:", name)
                 task.spawn(function()
                     while hopping do
                         local success = hopByKeyword(keyword, visitedKey, isFruit)
                         if not success then
-                            print("Reset visited, thử lại...")
+                            print(" visited, thử lại...")
                         end
                         task.wait(0.1)
                     end
-                    print("Dừng:", name)
+                    print(Dừng:", name)
                 end)
             else
-                print("Tắt:", name)
+                print(" Tắt:", name)
             end
         end
     })
 end
 
+-- ============================================================
+--  PHẦN 1: SERVER HOP
+-- ============================================================
 Tabs.Hop:AddSection("Server Hop")
 createToggle("Full Moon", "fullmoon", "VisitedFullMoonServers", false)
 createToggle("Near Moon", "nearmoon", "VisitedNearMoonServers", false)
@@ -322,6 +352,9 @@ createToggle("Mirage Island", "mirage", "VisitedMirageServers", false)
 createToggle("Kitsune Island", "kitsune", "VisitedKitsuneServers", false)
 createToggle("Prehistoric Island", "prehistoric", "VisitedPrehistoricServers", false)
 
+-- ============================================================
+--  PHẦN 2: BOSS HOP
+-- ============================================================
 Tabs.Hop:AddSection("Boss Hop")
 local bossList = {
     "FrozenLeviathan", "SwordShizu", "SwordOroshi", "SwordSaishi",
@@ -336,6 +369,9 @@ for _, bossName in ipairs(bossList) do
     createToggle(bossName, bossName, visitedKey, false)
 end
 
+-- ============================================================
+--  PHẦN 3: FRUIT HOP
+-- ============================================================
 Tabs.Hop:AddSection("Fruit Hop")
 
 local function refreshFruitList()
@@ -412,4 +448,4 @@ task.spawn(function()
 end)
 
 print("[Tay Hub] ✅ Đã tải xong!")
-print(" (")
+print(" (mới)")
