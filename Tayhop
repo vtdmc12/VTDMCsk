@@ -32,34 +32,15 @@ Tabs.Info:AddDiscordInvite({
 Tabs.Info:AddSection("Status Server")
 Tabs.Hop:AddSection("Server Browser")
 
--- ============================================================
---  PREMIUM API
--- ============================================================
 local API_BASE = "http://160.187.246.8:9999/output/noencode/premium"
-
-local API_TYPES = {
-    {name = "Full Moon", keyword = "fullmoon"},
-    {name = "Near Moon", keyword = "nearmoon"},
-    {name = "Mirage Island", keyword = "mirage"},
-    {name = "Elite", keyword = "elite"},
-    {name = "Pirate Raid", keyword = "pirateraid"},
-    {name = "Cursed Captain", keyword = "cursedcaptain"},
-    {name = "Darkbeard", keyword = "darkbeard"},
-    {name = "Cake Queen", keyword = "cakequeen"},
-    {name = "Cake Prince", keyword = "cakeprince"},
-    {name = "Rip Indra", keyword = "ripindra"},
-    {name = "Dough King", keyword = "doughking"},
-    {name = "Soul Reaper", keyword = "soulreaper"},
-}
+local API_TAYHUB = "https://api-tayhub.vercel.app"
+local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  -- ĐÃ ĐỔI API MỚI
 
 local fruitServerList = {}
 local serverButtons = {}
 local fruitLabel = nil
 local isRefreshing = false
 
--- ============================================================
---  HÀM LẤY JOB TỪ PREMIUM API
--- ============================================================
 local function fetchPremiumJobs(keyword)
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
@@ -68,7 +49,7 @@ local function fetchPremiumJobs(keyword)
     end
 
     local url = API_BASE .. "/" .. keyword
-    print("[.")
+    print("Đang lấy dữ liệu...")
     
     local ok, res = pcall(function()
         return request({
@@ -119,20 +100,127 @@ local function fetchPremiumJobs(keyword)
                     end
                 end
             end
-            print("[D")
+            print("[Premium] Tìm thấy", #jobs, "job ID")
             return jobs
         else
-            print("[ại!")
+            print("[Premium] ❌ Parse JSON thất bại!")
         end
     else
-        print("[P API!")
+        print("[Premium] ❌ Lỗi kết nối !")
     end
     return nil
 end
 
--- ============================================================
---  HÀM TELEPORT
--- ============================================================
+local function fetchTayHubJobs(keyword)
+    local HttpService = game:GetService("HttpService")
+    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
+    if not request then
+        return nil
+    end
+
+    print("[TayHub]  Đang lấy dữ liệu...")
+    
+    local ok, res = pcall(function()
+        return request({
+            Url = API_TAYHUB,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox",
+                ["Referer"] = "https://api-tayhub.vercel.app/"
+            }
+        })
+    end)
+
+    if ok and res then
+        local success, body = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        
+        if success and body and body.all_servers then
+            local jobs = {}
+            for _, v in ipairs(body.all_servers) do
+                local job = tostring(v.jobid or "")
+                local boss = tostring(v.type or "")
+                if #job > 10 and boss:lower():find(keyword:lower()) then
+                    job = job:gsub("[^a-f0-9%-]", "")
+                    if #job > 10 then
+                        table.insert(jobs, job)
+                    end
+                end
+            end
+            print("[TayHub]  Tìm thấy", #jobs, "job ID")
+            return jobs
+        end
+    end
+    print("Lỗi kết nối API!")
+    return nil
+end
+
+local function fetchDichVuJobs(keyword)
+    local HttpService = game:GetService("HttpService")
+    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
+    if not request then
+        return nil
+    end
+
+    print(" lấy dữ liệu từ  mới...")
+    
+    local ok, res = pcall(function()
+        return request({
+            Url = API_DICHVU,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox",
+                ["Referer"] = "https://dichvuvip3.onrender.com/"
+            }
+        })
+    end)
+
+    if ok and res then
+        local success, body = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        
+        if success and body and body.jobs then
+            local jobs = {}
+            for _, v in ipairs(body.jobs) do
+                local job = tostring(v.job or "")
+                local boss = tostring(v.boss or "")
+                if #job > 10 and boss:lower():find(keyword:lower()) then
+                    job = job:gsub("[^a-f0-9%-]", "")
+                    if #job > 10 then
+                        table.insert(jobs, job)
+                    end
+                end
+            end
+            print("]  thấy", #jobs, "job ID từ  mới")
+            return jobs
+        end
+    end
+    print("[DichVu] ❌ Lỗi kết nối  mới!")
+    return nil
+end
+
+local function fetchAllJobs(keyword)
+    local jobs = fetchPremiumJobs(keyword)
+    if jobs and #jobs > 0 then
+        return jobs
+    end
+    
+    jobs = fetchTayHubJobs(keyword)
+    if jobs and #jobs > 0 then
+        return jobs
+    end
+    
+    jobs = fetchDichVuJobs(keyword)
+    if jobs and #jobs > 0 then
+        return jobs
+    end
+    
+    print(" không có dữ liệu!")
+    return nil
+end
+
 local function Teleport(job)
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local TeleportService = game:GetService("TeleportService")
@@ -162,14 +250,11 @@ local function Teleport(job)
     return ok
 end
 
--- ============================================================
---  HÀM HOP
--- ============================================================
 local function hopByKeyword(keyword, visitedKey, isFruit)
-    local jobs = fetchPremiumJobs(keyword)
+    local jobs = fetchAllJobs(keyword)
     
     if not jobs or #jobs == 0 then
-        print("[Premium] ❌ Không có dữ liệu")
+        print("[❌] Không có dữ liệu")
         return false
     end
     
@@ -187,26 +272,23 @@ local function hopByKeyword(keyword, visitedKey, isFruit)
                 Duration = 5
             })
             
-            print("[Premium] 🎯 Đang teleport vào job:", job)
+            print(" teleport vào job:", job)
             
             local success = Teleport(job)
             if success then
-                print("✅ Teleport thành công!")
+                print("Teleport thành công!")
                 return true
             else
-                print("⚠️ Teleport thất bại, thử job khác...")
+                print("[⚠️] Teleport thất bại, thử job khác...")
             end
         end
     end
     
     _G[visitedKey] = {}
-    print("[Premium] 🔄 Reset visited")
+    print("sited")
     return false
 end
 
--- ============================================================
---  TẠO TOGGLE
--- ============================================================
 local function createToggle(name, keyword, visitedKey, isFruit)
     local hopping = false
     Tabs.Hop:AddToggle({
@@ -215,16 +297,16 @@ local function createToggle(name, keyword, visitedKey, isFruit)
         Callback = function(Value)
             hopping = Value
             if hopping then
-                print("[Premium]  Bắt đầu tìm:", name)
+                print("ìm:", name)
                 task.spawn(function()
                     while hopping do
                         local success = hopByKeyword(keyword, visitedKey, isFruit)
                         if not success then
-                            print("[Premium]  Reset visited, thử lại...")
+                            print("Reset visited, thử lại...")
                         end
                         task.wait(0.1)
                     end
-                    print(" Dừng:", name)
+                    print("Dừng:", name)
                 end)
             else
                 print("Tắt:", name)
@@ -233,9 +315,6 @@ local function createToggle(name, keyword, visitedKey, isFruit)
     })
 end
 
--- ============================================================
---  PHẦN 1: SERVER HOP
--- ============================================================
 Tabs.Hop:AddSection("Server Hop")
 createToggle("Full Moon", "fullmoon", "VisitedFullMoonServers", false)
 createToggle("Near Moon", "nearmoon", "VisitedNearMoonServers", false)
@@ -243,9 +322,6 @@ createToggle("Mirage Island", "mirage", "VisitedMirageServers", false)
 createToggle("Kitsune Island", "kitsune", "VisitedKitsuneServers", false)
 createToggle("Prehistoric Island", "prehistoric", "VisitedPrehistoricServers", false)
 
--- ============================================================
---  PHẦN 2: BOSS HOP
--- ============================================================
 Tabs.Hop:AddSection("Boss Hop")
 local bossList = {
     "FrozenLeviathan", "SwordShizu", "SwordOroshi", "SwordSaishi",
@@ -260,9 +336,6 @@ for _, bossName in ipairs(bossList) do
     createToggle(bossName, bossName, visitedKey, false)
 end
 
--- ============================================================
---  PHẦN 3: FRUIT HOP
--- ============================================================
 Tabs.Hop:AddSection("Fruit Hop")
 
 local function refreshFruitList()
@@ -281,7 +354,7 @@ local function refreshFruitList()
     serverButtons = {}
     fruitServerList = {}
     
-    local jobs = fetchPremiumJobs("fruit")
+    local jobs = fetchAllJobs("fruit")
     if jobs and #jobs > 0 then
         for _, job in ipairs(jobs) do
             if job ~= game.JobId then
@@ -338,5 +411,5 @@ task.spawn(function()
     refreshFruitList()
 end)
 
-print("[!")
-print("[9")
+print("[Tay Hub] ✅ Đã tải xong!")
+print(" (")
