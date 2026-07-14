@@ -1,4 +1,4 @@
-local redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
+locale redzlib = loadstring(game:HttpGet("https://raw.githubusercontent.com/tlredz/Library/refs/heads/main/redz-V5-remake/main.luau"))()
 local Window = redzlib:MakeWindow({
     Title = "Tay Hub ",
     SubTitle = "by @tungdepzai",
@@ -34,7 +34,7 @@ Tabs.Hop:AddSection("Server Browser")
 
 local API_BASE = "http://160.187.246.8:9999/output/noencode/premium"
 local API_TAYHUB = "https://api-tayhub.vercel.app"
-local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  -- ĐÃ ĐỔI API MỚI
+local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  
 
 local fruitServerList = {}
 local serverButtons = {}
