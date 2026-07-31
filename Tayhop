@@ -33,11 +33,10 @@ Tabs.Info:AddSection("Status Server")
 Tabs.Hop:AddSection("Server Browser")
 
 -- ============================================================
---  3 API (PREMIUM + TAYHUB + DICHVUVIP3 MỚI)
+--  2 API
 -- ============================================================
-local API_BASE = "http://160.187.246.8:9999/output/noencode/premium"
-local API_TAYHUB = "https://api-tayhub.vercel.app"
-local API_DICHVU = "https://dichvuvip3.onrender.com/api/c0a7998319e0/all"  -- ĐÃ ĐỔI API MỚI
+local API_MAIN = "https://dichvuvip36.onrender.com/api/c0a7998319e0/all"
+local API_BACKUP = "https://apihop-test-zp67.onrender.com/api/d2839024521e/all"
 
 local fruitServerList = {}
 local serverButtons = {}
@@ -45,145 +44,24 @@ local fruitLabel = nil
 local isRefreshing = false
 
 -- ============================================================
---  HÀM LẤY JOB TỪ PREMIUM API
+--  HÀM LẤY JOB TỪ API CHÍNH
 -- ============================================================
-local function fetchPremiumJobs(keyword)
+local function fetchMainJobs(keyword)
     local HttpService = game:GetService("HttpService")
     local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
     if not request then
         return nil
     end
 
-    local url = API_BASE .. "/" .. keyword
-    print(" Đang lấy dữ liệu...")
+    print("Đang lấy dữ liệu từ API chính...")
     
     local ok, res = pcall(function()
         return request({
-            Url = url,
+            Url = API_MAIN,
             Method = "GET",
             Headers = {
                 ["User-Agent"] = "Roblox",
-                ["Referer"] = "http://160.187.246.8:9999/"
-            }
-        })
-    end)
-
-    if ok and res then
-        local raw = res.Body or ""
-        local fixedRaw = raw
-        if not string.match(raw, "^%[") then
-            fixedRaw = "[" .. fixedRaw
-        end
-        if not string.match(raw, "%]$") then
-            fixedRaw = fixedRaw .. "]"
-        end
-        fixedRaw = fixedRaw:gsub("}{", "},{")
-        
-        local success, body = pcall(function()
-            return HttpService:JSONDecode(fixedRaw)
-        end)
-        
-        if success and body then
-            local jobs = {}
-            local data = body
-            if type(data) == "table" then
-                if not data[1] then
-                    local temp = {}
-                    for _, v in pairs(data) do
-                        if type(v) == "table" then
-                            table.insert(temp, v)
-                        end
-                    end
-                    data = temp
-                end
-                for _, v in ipairs(data) do
-                    local job = tostring(v.Job_id or v.job_id or v.job or v.jobid or v.id or "")
-                    if job ~= "" and #job > 10 then
-                        job = job:gsub("[^a-f0-9%-]", "")
-                        if #job > 10 then
-                            table.insert(jobs, job)
-                        end
-                    end
-                end
-            end
-            print(" Tìm thấy", #jobs, "job ID")
-            return jobs
-        else
-            print(" Parse JSON thất bại!")
-        end
-    else
-        print("!")
-    end
-    return nil
-end
-
--- ============================================================
---  HÀM LẤY JOB TỪ TAYHUB API
--- ============================================================
-local function fetchTayHubJobs(keyword)
-    local HttpService = game:GetService("HttpService")
-    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
-    if not request then
-        return nil
-    end
-
-    print("Đang lấy dữ liệu...")
-    
-    local ok, res = pcall(function()
-        return request({
-            Url = API_TAYHUB,
-            Method = "GET",
-            Headers = {
-                ["User-Agent"] = "Roblox",
-                ["Referer"] = "https://api-tayhub.vercel.app/"
-            }
-        })
-    end)
-
-    if ok and res then
-        local success, body = pcall(function()
-            return HttpService:JSONDecode(res.Body)
-        end)
-        
-        if success and body and body.all_servers then
-            local jobs = {}
-            for _, v in ipairs(body.all_servers) do
-                local job = tostring(v.jobid or "")
-                local boss = tostring(v.type or "")
-                if #job > 10 and boss:lower():find(keyword:lower()) then
-                    job = job:gsub("[^a-f0-9%-]", "")
-                    if #job > 10 then
-                        table.insert(jobs, job)
-                    end
-                end
-            end
-            print(" Tìm thấy", #jobs, "job ID")
-            return jobs
-        end
-    end
-    print("!")
-    return nil
-end
-
--- ============================================================
---  HÀM LẤY JOB TỪ DICHVUVIP3 MỚI
--- ============================================================
-local function fetchDichVuJobs(keyword)
-    local HttpService = game:GetService("HttpService")
-    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
-    if not request then
-        return nil
-    end
-
-    print("mới...")
-    
-    local ok, res = pcall(function()
-        return request({
-            Url = API_DICHVU,
-            Method = "GET",
-            Headers = {
-                ["User-Agent"] = "Roblox",
-                ["Referer"] = "https://dichvuvip3.onrender.com/"
+                ["Referer"] = "https://dichvuvip36.onrender.com/"
             }
         })
     end)
@@ -205,11 +83,59 @@ local function fetchDichVuJobs(keyword)
                     end
                 end
             end
-            print(" Tìm thấy", #jobs, "job ID từ API mới")
+            print("Tìm thấy", #jobs, "job ID từ API chính")
             return jobs
         end
     end
-    print("mới!")
+    print("Lỗi kết nối API chính!")
+    return nil
+end
+
+-- ============================================================
+--  HÀM LẤY JOB TỪ API DỰ PHÒNG
+-- ============================================================
+local function fetchBackupJobs(keyword)
+    local HttpService = game:GetService("HttpService")
+    local request = (syn and syn.request) or http_request or request or (fluxus and fluxus.request) or (http and http.request)
+    if not request then
+        return nil
+    end
+
+    print("Đang lấy dữ liệu từ API dự phòng...")
+    
+    local ok, res = pcall(function()
+        return request({
+            Url = API_BACKUP,
+            Method = "GET",
+            Headers = {
+                ["User-Agent"] = "Roblox",
+                ["Referer"] = "https://apihop-test-zp67.onrender.com/"
+            }
+        })
+    end)
+
+    if ok and res then
+        local success, body = pcall(function()
+            return HttpService:JSONDecode(res.Body)
+        end)
+        
+        if success and body and body.jobs then
+            local jobs = {}
+            for _, v in ipairs(body.jobs) do
+                local job = tostring(v.job or "")
+                local boss = tostring(v.boss or "")
+                if #job > 10 and boss:lower():find(keyword:lower()) then
+                    job = job:gsub("[^a-f0-9%-]", "")
+                    if #job > 10 then
+                        table.insert(jobs, job)
+                    end
+                end
+            end
+            print("Tìm thấy", #jobs, "job ID từ API dự phòng")
+            return jobs
+        end
+    end
+    print("Lỗi kết nối API dự phòng!")
     return nil
 end
 
@@ -217,25 +143,17 @@ end
 --  HÀM LẤY JOB TỪ TẤT CẢ API (FALLBACK)
 -- ============================================================
 local function fetchAllJobs(keyword)
-    -- THỬ PREMIUM TRƯỚC
-    local jobs = fetchPremiumJobs(keyword)
+    local jobs = fetchMainJobs(keyword)
     if jobs and #jobs > 0 then
         return jobs
     end
     
-    -- NẾU PREMIUM LỖI, THỬ TAYHUB
-    jobs = fetchTayHubJobs(keyword)
+    jobs = fetchBackupJobs(keyword)
     if jobs and #jobs > 0 then
         return jobs
     end
     
-    -- NẾU TAYHUB LỖI, THỬ DICHVU MỚI
-    jobs = fetchDichVuJobs(keyword)
-    if jobs and #jobs > 0 then
-        return jobs
-    end
-    
-    print(" đều không có dữ liệu!")
+    print("Cả 2 API đều không có dữ liệu!")
     return nil
 end
 
@@ -278,7 +196,7 @@ local function hopByKeyword(keyword, visitedKey, isFruit)
     local jobs = fetchAllJobs(keyword)
     
     if not jobs or #jobs == 0 then
-        print("[❌] Không có dữ liệu")
+        print("Không có dữ liệu")
         return false
     end
     
@@ -296,20 +214,20 @@ local function hopByKeyword(keyword, visitedKey, isFruit)
                 Duration = 5
             })
             
-            print(" teleport vào job:", job)
+            print("Đang teleport vào job:", job)
             
             local success = Teleport(job)
             if success then
-                print("[✅] Teleport thành công!")
+                print("Teleport thành công!")
                 return true
             else
-                print("[⚠️] Teleport thất bại, thử job khác...")
+                print("Teleport thất bại, thử job khác...")
             end
         end
     end
     
     _G[visitedKey] = {}
-    print(" Reset visited")
+    print("Reset visited")
     return false
 end
 
@@ -329,14 +247,14 @@ local function createToggle(name, keyword, visitedKey, isFruit)
                     while hopping do
                         local success = hopByKeyword(keyword, visitedKey, isFruit)
                         if not success then
-                            print(" visited, thử lại...")
+                            print("Reset visited, thử lại...")
                         end
                         task.wait(0.1)
                     end
                     print("Dừng:", name)
                 end)
             else
-                print(" Tắt:", name)
+                print("Tắt:", name)
             end
         end
     })
@@ -447,5 +365,6 @@ task.spawn(function()
     refreshFruitList()
 end)
 
-print("[Tay Hub] ✅ Đã tải xong!")
-print(" (mới)")
+print("Tay Hub đã tải xong!")
+print("API chính: dichvuvip36")
+print("API dự phòng: apihop-test-zp67")
